@@ -94,6 +94,12 @@ describe('Chaincode', () => {
     });
 
     describe('#_transfer', () => {
+
+        it('should fail when the sender and the receipient are the same', async () => {
+            await expect(token._transfer(ctx, 'Alice', 'Alice', '1000'))
+                .to.be.rejectedWith(Error, 'cannot transfer to and from same client account');
+        });
+
         it('should fail when the sender does not have enough token', async () => {
             mockStub.createCompositeKey.withArgs('balance', ['Alice']).returns('balance_Alice');
             mockStub.getState.withArgs('balance_Alice').resolves(Buffer.from('500'));
@@ -187,6 +193,16 @@ describe('Chaincode', () => {
 
             const response = await token.Allowance(ctx, 'Dave', 'Eve');
             expect(response).to.equals(1000);
+        });
+    });
+
+    describe('#SetOption', () => {
+        it('should work', async () => {
+            const response = await token.SetOption(ctx, 'some name', 'some symbol', '2');
+            sinon.assert.calledWith(mockStub.putState, 'name', Buffer.from('some name'));
+            sinon.assert.calledWith(mockStub.putState, 'symbol', Buffer.from('some symbol'));
+            sinon.assert.calledWith(mockStub.putState, 'decimals', Buffer.from('2'));
+            expect(response).to.equals(true);
         });
     });
 
